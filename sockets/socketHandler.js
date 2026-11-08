@@ -49,7 +49,17 @@ const runPreflight = async () => {
     };
 
     // 6. Camera
-    checks.camera = { ok: true, detail: 'Kamera Siap' };
+    try {
+        const camStatus = await cameraService.getCameraStatus();
+        checks.camera = {
+            ok: camStatus.ok,
+            detail: camStatus.ok
+                ? (camStatus.model || 'Kamera Siap')
+                : (camStatus.error || 'Kamera Tidak Terhubung')
+        };
+    } catch (e) {
+        checks.camera = { ok: false, detail: `Kamera Error: ${e.message}` };
+    }
 
     const allOk = Object.values(checks).every(c => c.ok);
     return {
@@ -60,13 +70,31 @@ const runPreflight = async () => {
 };
 
 module.exports = function (io) {
-    io.on('connection', (socket) => {
+    // Inisialisasi background folder watcher untuk digiCamControl jika remote shutter digunakan
+    cameraService.initDigiCamWatcher(io, () => {
+        const activeFolder = session.getActiveUserFolder();
+        return path.join(config.BASE_PHOTO_FOLDER, activeFolder);
+    });
+
+    io.on('connection', async (socket) => {
         logger.info('client_connected', { id: socket.id });
+
+        // Kirim status awal kamera ke client saat terhubung
+        try {
+            const camStatus = await cameraService.getCameraStatus();
+            socket.emit('camera-status', camStatus);
+        } catch (e) {}
 
         // 1. Preflight check
         socket.on('preflight-check', async () => {
             const result = await runPreflight();
             socket.emit('preflight-result', result);
+        });
+
+        // 1.1 Status kamera manual request
+        socket.on('camera-status-request', async () => {
+            const camStatus = await cameraService.getCameraStatus();
+            socket.emit('camera-status', camStatus);
         });
 
         // 2. Start new session (Supports guest/user name)
@@ -100,6 +128,30 @@ module.exports = function (io) {
             cameraService.stopLiveView();
         });
 
+        // 4.1 Kontrol Kamera Hardware (digiCamControl / Windows)
+        socket.on('auto-focus', async () => {
+            const res = await cameraService.triggerAutoFocus();
+            socket.emit('auto-focus-result', res);
+        });
+
+        socket.on('set-iso', async (val) => {
+            const isoVal = (val && typeof val === 'object') ? val.value : val;
+            const res = await cameraService.setIso(isoVal);
+            socket.emit('set-iso-result', res);
+        });
+
+        socket.on('set-shutter', async (val) => {
+            const shutterVal = (val && typeof val === 'object') ? val.value : val;
+            const res = await cameraService.setShutterSpeed(shutterVal);
+            socket.emit('set-shutter-result', res);
+        });
+
+        socket.on('set-mirror', async (isMirror) => {
+            const mirrorVal = (typeof isMirror === 'boolean') ? isMirror : (isMirror === 'true' || isMirror === 1);
+            const res = await cameraService.setMirror(mirrorVal);
+            socket.emit('set-mirror-result', res);
+        });
+
         // 5. Capture Photo
         socket.on('take-photo', async () => {
             try {
@@ -111,11 +163,15 @@ module.exports = function (io) {
                 const baseUrl = networkService.resolvePublicBaseUrl();
                 const photoUrl = `${baseUrl}/photos/${encodeURIComponent(activeFolder)}/${encodeURIComponent(fileName)}`;
 
-                io.emit('photo-taken', {
+                const payload = {
                     filename: fileName,
                     url: photoUrl,
                     localPath: savedFile
-                });
+                };
+
+                // Kirim event photo-taken dan photo-ready (kompatibilitas penuh Flutter UI)
+                io.emit('photo-taken', payload);
+                io.emit('photo-ready', payload);
             } catch (err) {
                 logger.error('take_photo_failed', { error: err.message });
                 socket.emit('photo-error', { error: err.message });

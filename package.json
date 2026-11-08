@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node app.js",
     "dev": "node app.js",
-    "test": "node tests/test_event_suite.js"
+    "test": "node tests/test_digicam_suite.js && node tests/test_event_suite.js",
+    "test:digicam": "node tests/test_digicam_suite.js",
+    "test:event": "node tests/test_event_suite.js"
   },
   "dependencies": {
     "archiver": "^7.0.1",

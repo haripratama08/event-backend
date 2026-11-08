@@ -39,11 +39,29 @@ async function runTests() {
     const serverUrl = `http://127.0.0.1:3088`;
     console.log(`✅ [2/8] Server aktif pada ${serverUrl}`);
 
-    // 1. Uji Endpoint Root & Network Info
-    const netInfo = await makeRequest(`${serverUrl}/api/system/network-info`);
+    // 1. Uji Endpoint Root & Network Info & ngrok auto-skip warning header
+    const rawRes = await makeRawResponse(`${serverUrl}/api/system/network-info`);
+    assert.strictEqual(rawRes.headers['ngrok-skip-browser-warning'], 'true', 'Header bypass warning ngrok harus terpasang');
+    const netInfo = JSON.parse(rawRes.body);
     assert.strictEqual(typeof netInfo.localIp, 'string');
     assert.strictEqual(netInfo.port, 3088);
-    console.log(`✅ [3/8] Network Info valid: Local IP = ${netInfo.localIp}, Base URL = ${netInfo.publicBaseUrl}`);
+    console.log(`✅ [3/8] Network Info valid: Local IP = ${netInfo.localIp}, Base URL = ${netInfo.publicBaseUrl} (Bypass ngrok header verified)`);
+
+    // 1.1 Uji Auto-Detect ngrok Tunnel (Bebas IP)
+    const mockNgrok = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            tunnels: [
+                { proto: 'http', public_url: 'http://photobox.ngrok-free.app' },
+                { proto: 'https', public_url: 'https://photobox.ngrok-free.app' }
+            ]
+        }));
+    });
+    await new Promise(r => mockNgrok.listen(4048, '127.0.0.1', r));
+    const networkService = require('../services/networkService');
+    const detectedUrl = await networkService.detectNgrokTunnel('http://127.0.0.1:4048/api/tunnels');
+    assert.strictEqual(detectedUrl, 'https://photobox.ngrok-free.app', 'ngrok HTTPS tunnel harus otomatis terdeteksi');
+    await new Promise(r => mockNgrok.close(r));
 
     // 2. Hubungkan Socket.IO Client
     const client = Client(serverUrl);
@@ -176,7 +194,7 @@ function makeRawResponse(url) {
         http.get(url, (res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
-            res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
+            res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, body: data }));
         }).on('error', reject);
     });
 }

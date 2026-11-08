@@ -28,6 +28,12 @@ fs.ensureDirSync(config.FRAMES_FOLDER);
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Otomatis bypass halaman warning interstitial ngrok free untuk seluruh endpoint
+app.use((req, res, next) => {
+    res.setHeader('ngrok-skip-browser-warning', 'true');
+    next();
+});
+
 // Static Assets
 app.use('/photos', express.static(config.BASE_PHOTO_FOLDER));
 app.use('/frames', express.static(config.FRAMES_FOLDER));
@@ -51,13 +57,25 @@ app.get('/api/session/:sessionId/zip', downloadController.downloadZip);
 app.get('/api/session/:sessionId/download/:filename', downloadController.downloadFile);
 
 // Info Jaringan & Status
-app.get('/api/system/network-info', (req, res) => {
+app.get('/api/system/network-info', async (req, res) => {
+    await networkService.refreshTunnelUrl();
+    const publicUrl = networkService.resolvePublicBaseUrl();
     res.json({
         localIp: networkService.getLocalIpAddress(),
-        publicBaseUrl: networkService.resolvePublicBaseUrl(),
-        isTunnel: networkService.resolvePublicBaseUrl().startsWith('https://'),
+        publicBaseUrl: publicUrl,
+        isTunnel: networkService.isTunnelActive(),
+        tunnelType: networkService.getTunnelType(),
         port: config.PORT
     });
+});
+
+app.get('/api/system/camera-status', async (req, res) => {
+    try {
+        const status = await cameraService.getCameraStatus();
+        res.json(status);
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
 });
 
 app.get('/preview-frame', (req, res) => {
@@ -70,14 +88,16 @@ socketHandler(io);
 if (require.main === module) {
     server.listen(config.PORT, config.HOST, () => {
         const publicUrl = networkService.resolvePublicBaseUrl();
+        const activeDriver = cameraService.resolveDriver();
         console.log(`====================================================`);
         console.log(`🎉 DICERITAKITA API BERHASIL AKTIF!`);
         console.log(`📡 Port Lokal : http://${config.HOST}:${config.PORT}`);
         console.log(`🌐 Base URL   : ${publicUrl}`);
         console.log(`📸 Simpan Foto: ${config.BASE_PHOTO_FOLDER}`);
         console.log(`🖼️ Folder Frame: ${config.FRAMES_FOLDER}`);
+        console.log(`📷 Driver Kamera: ${activeDriver.toUpperCase()} (${activeDriver === 'digicam' ? config.DIGICAM_URL : 'Native'})`);
         console.log(`====================================================`);
-        logger.info('server_started', { port: config.PORT, publicUrl });
+        logger.info('server_started', { port: config.PORT, publicUrl, cameraDriver: activeDriver });
     });
 }
 
