@@ -1,0 +1,28 @@
+{
+  "name": "photobox-event-api",
+  "version": "1.0.0",
+  "description": "Backend API Photobox Khusus Event (QR Code Download + Cloudflare Tunnel + Print Selector)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js",
+    "test": "node tests/test_event_suite.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "fs-extra": "^11.2.0",
+    "qrcode": "^1.5.3",
+    "sharp": "^0.33.4",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "private": true
+}

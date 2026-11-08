@@ -1,0 +1,12 @@
+{
+  "camera": {
+    "name": "Canon EOS Photobox Event",
+    "driver": "gphoto2",
+    "port": "usb"
+  },
+  "printer": {
+    "name": "PHOTO_EVENT",
+    "model": "Epson L8050 Series / DNP / Default",
+    "connection": "usb_or_cups"
+  }
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unduh Foto Photobox Event</title>
+    <link rel="stylesheet" href="/download-assets/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="badge">PHOTOBOX EVENT</div>
+            <h1 id="eventTitle">Foto Anda Siap Diunduh!</h1>
+            <p class="subtitle" id="sessionSubtitle">Sesi: Memuat...</p>
+        </header>
+
+        <!-- Status & Masa Aktif Card -->
+        <div id="sessionStatusCard" class="status-card" style="display: none;">
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Masa Unduh Aktif</span>
+            </div>
+            <div class="guest-info">
+                <span class="guest-name" id="guestNameBadge">Tamu: Memuat</span>
+                <span class="expiry-time" id="expiryTimeBadge">Masa simpan: 3 Hari</span>
+            </div>
+        </div>
+
+        <!-- CTA Download All Button -->
+        <div class="batch-download-card">
+            <button id="btnDownloadAll" class="btn btn-primary btn-large">
+                <span class="icon">📦</span>
+                <span>Download Semua Foto (.ZIP)</span>
+            </button>
+        </div>
+
+        <!-- Section 1: Framed Photo -->
+        <section class="section" id="frameSection" style="display: none;">
+            <div class="section-title">
+                <span class="icon">🖼️</span>
+                <h2>Foto Berbingkai (Frame)</h2>
+            </div>
+            <div class="frame-card">
+                <div class="img-wrapper">
+                    <img id="frameImg" src="" alt="Foto Frame" loading="eager">
+                </div>
+                <a id="btnDownloadFrame" href="#" download class="btn btn-accent btn-block">
+                    <span class="icon">⬇️</span> Simpan Foto Berbingkai
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 2: Animated GIF -->
+        <section class="section" id="gifSection" style="display: none;">
+            <div class="section-title">
+                <span class="icon">✨</span>
+                <h2>Animasi Bergerak (GIF)</h2>
+            </div>
+            <div class="gif-card">
+                <div class="img-wrapper">
+                    <img id="gifImg" src="" alt="Animasi GIF" loading="lazy">
+                </div>
+                <a id="btnDownloadGif" href="#" download class="btn btn-accent btn-block">
+                    <span class="icon">⬇️</span> Simpan Animasi GIF
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 3: Raw Individual Photos -->
+        <section class="section" id="rawSection" style="display: none;">
+            <div class="section-title">
+                <span class="icon">📸</span>
+                <h2>Foto Asli (Original)</h2>
+            </div>
+            <div class="raw-grid" id="rawGrid">
+                <!-- Injected via JavaScript -->
+            </div>
+        </section>
+
+        <!-- Help / Admin Contact Card -->
+        <div class="help-card" id="adminHelpCard" style="display: none;">
+            <p>Butuh bantuan atau file foto bermasalah?</p>
+            <a id="btnChatAdmin" href="#" target="_blank" class="btn btn-wa-outline">
+                💬 Hubungi Admin via WhatsApp
+            </a>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Terima kasih telah berfoto bersama kami!</p>
+            <p class="copyright">&copy; Photobox Event Studio</p>
+        </footer>
+    </div>
+
+    <script src="/download-assets/app.js"></script>
+</body>
+</html>
